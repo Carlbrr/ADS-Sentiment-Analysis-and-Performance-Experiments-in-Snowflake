@@ -1,4 +1,6 @@
 import re
+#obs. when creating the UDF in Snowflake, we must care for the ' character - we must use the double ' to escape it in the code, 
+#as all the python code is just seen as a string literal.
 
 def clean_text(text_input):
     # Make lowercase
