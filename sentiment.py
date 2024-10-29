@@ -1,4 +1,3 @@
-import re
 import math
 import pandas as pd
 
@@ -23,7 +22,7 @@ class SentimentAnalysisVectorizedUDTF:
         self.total_reviews = {0: 0, 4: 0}  # Review counts for each score
         self.prior_probs = {}  # Prior probabilities for each score
         self.likelihoods = {}  # Likelihood of each word for each score
-        self.test_data = []  # Hold test data for later predictions (will not happen in the process method but in end_partition as its a batch process/vectorized UDTF)
+        #self.test_data = []  # Hold test data for later predictions (will not happen in the process method but in end_partition as its a batch process/vectorized UDTF)
 
     def clean_text(self, text_series):
         # Clean and split for pandas Series of text
@@ -34,6 +33,15 @@ class SentimentAnalysisVectorizedUDTF:
         return words_series.apply(lambda words: [word for word in words if word not in self.stopwords])
 
     def process(self, modes, labels, reviews):
+        # Convert inputs to Series if not already - i got an error in snowflake that it didnt. 
+        # modes, labels, and reviews are read as scalar values rather than as lists or Pandas Series - so its not vectorized?
+        if not isinstance(modes, pd.Series):
+            modes = pd.Series(modes)
+        if not isinstance(labels, pd.Series):
+            labels = pd.Series(labels)
+        if not isinstance(reviews, pd.Series):
+            reviews = pd.Series(reviews)
+
         # Convert inputs to DataFrame
         df = pd.DataFrame({"mode": modes, "label": labels, "review": reviews})
         
@@ -54,8 +62,8 @@ class SentimentAnalysisVectorizedUDTF:
                 if word not in self.word_counts[label]:
                     self.word_counts[label][word] = 0
                 self.word_counts[label][word] += 1
-
-    def end_partition(self):
+    
+    def end_partition(self, df):
         # Calculate priors and likelihoods after processing all training data
         self.calculate_probabilities()
 
@@ -81,7 +89,11 @@ class SentimentAnalysisVectorizedUDTF:
             results.append((actual_label, predicted_score))
 
         # Return predictions for evaluation
-        return pd.DataFrame(results, columns=["ACTUAL_LABEL", "PREDICTED_SCORE"])
+        predicted_score = max(score_probabilities, key=score_probabilities.get)
+        results.append((actual_label, predicted_score))
+
+        # Return the tuples
+        return iter(results)
 
     # Helper method to separate the "training" part of the classifier
     def calculate_probabilities(self):
