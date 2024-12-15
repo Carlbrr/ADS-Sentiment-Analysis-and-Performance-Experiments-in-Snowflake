@@ -13,7 +13,7 @@ This SQL uses a Python UDF (user-defined-function) to clean and split review tex
 - **NaiveBayesUDTF.sql**
 Includes all SQL to complete second part of the project, e.g. performing sentiment analysis now using UDTF (user-defined-table-functions). That is, this SQL includes a vectorized Python UDTF as found in **sentiment_vectorized.py**. 
 
-- **SnowflakeBenchmark.sql**
+- **TPCH.sql**
 Includes all SQL for the third and final part of the project, e.g. performing TPC-H benchmarks using varying warehouse configurations and scaling factors against snowflake with TPC-H queries: 1, 5, and 18. 
 
 
